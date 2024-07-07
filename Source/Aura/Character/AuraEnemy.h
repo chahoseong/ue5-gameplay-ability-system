@@ -22,6 +22,5 @@ public:
 	virtual void UnhighlightActor() override;
 
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Debug")
-	bool bHighlighting = false;
+
 };
