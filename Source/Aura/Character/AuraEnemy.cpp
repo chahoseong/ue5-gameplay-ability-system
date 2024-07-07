@@ -2,11 +2,19 @@
 
 
 #include "AuraEnemy.h"
+#include "DrawDebugHelpers.h"
+
+AAuraEnemy::AAuraEnemy()
+{
+
+}
 
 void AAuraEnemy::HighlightActor()
 {
+	bHighlighting = true;
 }
 
 void AAuraEnemy::UnhighlightActor()
 {
+	bHighlighting = false;
 }
