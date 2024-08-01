@@ -60,6 +60,12 @@ public:
 	FOnMaxManaChangedSignature OnMaxManaChanged;
 
 protected:
+	template <typename T>
+	T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag)
+	{
+		return DataTable->FindRow<T>(Tag.GetTagName(), TEXT(""));
+	}
+
 	void HealthChanged(const FOnAttributeChangeData& Data) const;
 	void MaxHealthChanged(const FOnAttributeChangeData& Data) const;
 
