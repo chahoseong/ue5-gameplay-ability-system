@@ -9,6 +9,7 @@
 
 class UAbilitySystemComponent;
 class UAttributeSet;
+class UGameplayEffect;
 
 UCLASS(Abstract)
 class AURA_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface
@@ -28,6 +29,8 @@ protected:
 
 	virtual void InitAbilityActorInfo();
 
+	void InitializePrimaryAttributes() const;
+
 protected:
 	// TObjectPtr: Reference Counting, Lazy Loading
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -38,4 +41,7 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> AttributeSet;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attributes")
+	TSubclassOf<UGameplayEffect> DefaultPrimaryAttributes;
 };
