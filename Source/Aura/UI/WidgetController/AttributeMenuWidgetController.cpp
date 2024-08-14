@@ -8,6 +8,18 @@
 
 void UAttributeMenuWidgetController::BindCallbacksToDependencies()
 {
+	UAuraAttributeSet* AuraAttributeSet = CastChecked<UAuraAttributeSet>(AttributeSet);
+
+	for (auto& Pair : AuraAttributeSet->TagsToAttributes)
+	{
+		const FGameplayAttribute Attribute = Pair.Value();
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Attribute).AddLambda(
+			[this, Pair](const FOnAttributeChangeData& Data)
+			{
+				BroadcastAttributeInfo(Pair.Key, Pair.Value());
+			}
+		);
+	}
 }
 
 void UAttributeMenuWidgetController::BroadcastInitialValues()
@@ -18,9 +30,13 @@ void UAttributeMenuWidgetController::BroadcastInitialValues()
 
 	for (auto& Pair : AuraAttributeSet->TagsToAttributes)
 	{
-		FAuraAttributeInfo Info = AttributeInfo->FindAttributeInfoForTag(Pair.Key);
-		const FGameplayAttribute Attribute = Pair.Value();
-		Info.AttributeValue = Attribute.GetNumericValue(AuraAttributeSet);
-		AttributeInfoDelegate.Broadcast(Info);
+		BroadcastAttributeInfo(Pair.Key, Pair.Value());
 	}
+}
+
+void UAttributeMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag& AttreibuteTag, const FGameplayAttribute& Attribute) const
+{
+	FAuraAttributeInfo Info = AttributeInfo->FindAttributeInfoForTag(AttreibuteTag);
+	Info.AttributeValue = Attribute.GetNumericValue(AttributeSet);
+	AttributeInfoDelegate.Broadcast(Info);
 }
