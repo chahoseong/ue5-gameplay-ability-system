@@ -26,6 +26,79 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 	Super::PlayerTick(DeltaTime);
 
 	CursorTrace();
+	AutoRun();
+}
+
+void AAuraPlayerController::CursorTrace()
+{
+	FHitResult CursorHit;
+	GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, false, CursorHit);
+
+	if (!CursorHit.bBlockingHit)
+	{
+		return;
+	}
+
+	LastActor = ThisActor;
+	ThisActor = CursorHit.GetActor();
+
+	/*
+	 * Line trace from cursor. There are several scenarios:
+	 *	A. LastActor is null && ThisActor is null
+	 *		- Do nothing.
+	 *	B. LastActor is null && ThisActor is valid
+	 *		- Highlight ThisActor.
+	 *	C. LastActor is valid && ThisActor is null
+	 *		- Unhighlight LastActor.
+	 *	D. Both actors are valid, but LastActor != ThisActor
+	 *		- Unhighlight LastActor, and Highlight ThisActor.
+	 *	E. Both actors are valid, and are the same actor
+	 *		- Do nothing.
+	 */
+
+	if (LastActor == nullptr)
+	{
+		if (ThisActor != nullptr)
+		{
+			// Case B
+			ThisActor->HighlightActor();
+		}
+	}
+	else
+	{
+		if (ThisActor == nullptr)
+		{
+			// Case C
+			LastActor->UnhighlightActor();
+		}
+		else if (LastActor != ThisActor)
+		{
+			// Case D
+			LastActor->UnhighlightActor();
+			ThisActor->HighlightActor();
+		}
+	}
+}
+
+void AAuraPlayerController::AutoRun()
+{
+	if (!bAutoRunning)
+	{
+		return;
+	}
+
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		const FVector LocationOnSpline = Spline->FindLocationClosestToWorldLocation(ControlledPawn->GetActorLocation(), ESplineCoordinateSpace::World);
+		const FVector Direction = Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
+		ControlledPawn->AddMovementInput(Direction);
+
+		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
+		if (DistanceToDestination <= AutoRunAcceptanceRadius)
+		{
+			bAutoRunning = false;
+		}
+	}
 }
 
 void AAuraPlayerController::BeginPlay()
@@ -73,57 +146,6 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 	{
 		ControlledPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
 		ControlledPawn->AddMovementInput(RightDirection, InputAxisVector.X);
-	}
-}
-
-void AAuraPlayerController::CursorTrace()
-{
-	FHitResult CursorHit;
-	GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, false, CursorHit);
-	
-	if (!CursorHit.bBlockingHit)
-	{
-		return;
-	}
-
-	LastActor = ThisActor;
-	ThisActor = CursorHit.GetActor();
-
-	/*
-	 * Line trace from cursor. There are several scenarios:
-	 *	A. LastActor is null && ThisActor is null
-	 *		- Do nothing.
-	 *	B. LastActor is null && ThisActor is valid
-	 *		- Highlight ThisActor.
-	 *	C. LastActor is valid && ThisActor is null
-	 *		- Unhighlight LastActor.
-	 *	D. Both actors are valid, but LastActor != ThisActor
-	 *		- Unhighlight LastActor, and Highlight ThisActor.
-	 *	E. Both actors are valid, and are the same actor
-	 *		- Do nothing.
-	 */
-
-	if (LastActor == nullptr)
-	{
-		if (ThisActor != nullptr)
-		{
-			// Case B
-			ThisActor->HighlightActor();
-		}
-	}
-	else
-	{
-		if (ThisActor == nullptr)
-		{
-			// Case C
-			LastActor->UnhighlightActor();
-		}
-		else if (LastActor != ThisActor)
-		{
-			// Case D
-			LastActor->UnhighlightActor();
-			ThisActor->HighlightActor();
-		}
 	}
 }
 
@@ -180,7 +202,7 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 					Spline->AddSplinePoint(PointLoc, ESplineCoordinateSpace::World);
 					DrawDebugSphere(GetWorld(), PointLoc, 8.0f, 8, FColor::Green, false, 5.0f);
 				}
-				
+				CachedDestination = NavPath->PathPoints[NavPath->PathPoints.Num() - 1];
 				bAutoRunning = true;
 			}
 		}
