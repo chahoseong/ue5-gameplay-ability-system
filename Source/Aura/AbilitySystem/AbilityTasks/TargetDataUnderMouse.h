@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/Tasks/AbilityTask.h"
+#include "GameplayTagContainer.h"
 #include "TargetDataUnderMouse.generated.h"
 
 struct FGameplayAbilityTargetDataHandle;
@@ -29,4 +30,5 @@ public:
 private:
 	virtual void Activate() override;
 	void SendMouseCursorData();
+	void OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag);
 };
