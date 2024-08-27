@@ -33,6 +33,8 @@ protected:
 
 private:
 	void Move(const FInputActionValue& InputActionValue);
+	void ShiftPressed();
+	void ShiftReleased();
 
 	void CursorTrace();
 	void AutoRun();
@@ -49,6 +51,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> ShiftAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UAuraInputConfig> InputConfig;
@@ -71,4 +76,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USplineComponent> Spline;
+
+	bool bShiftKeyDown = false;
 };
