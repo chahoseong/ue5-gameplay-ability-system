@@ -9,12 +9,15 @@
 struct AuraDamageStatics
 {
 	DECLARE_ATTRIBUTE_CAPTUREDEF(Armor);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(ArmorPenetration);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(BlockChance);
 
 	AuraDamageStatics()
 	{
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, Armor, Target, false);
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, BlockChance, Target, false);
+
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UAuraAttributeSet, ArmorPenetration, Source, false);
 	}
 };
 
@@ -29,6 +32,7 @@ UExecCalc_Damage::UExecCalc_Damage()
 {
 	RelevantAttributesToCapture.Add(DamageStatics().ArmorDef);
 	RelevantAttributesToCapture.Add(DamageStatics().BlockChanceDef);
+	RelevantAttributesToCapture.Add(DamageStatics().ArmorPenetrationDef);
 }
 
 void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, FGameplayEffectCustomExecutionOutput& OutExecutionOutput) const
@@ -52,16 +56,30 @@ void UExecCalc_Damage::Execute_Implementation(const FGameplayEffectCustomExecuti
 	float Damage = Spec.GetSetByCallerMagnitude(FAuraGameplayTags::Get().Damage);
 
 	// Capture BlockChance on Target, and determine if there was a successful Block
-	// If Block, halve the damage.
 	float TargetBlockChance = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().BlockChanceDef, EvaluationParams, TargetBlockChance);
 	TargetBlockChance = FMath::Max<float>(TargetBlockChance, 0.0f);
 	
+	// If Block, halve the damage.
 	const bool bBlocked = FMath::RandRange(1, 100) < TargetBlockChance;
 	if (bBlocked)
 	{
 		Damage *= 0.5f;
 	}
+
+
+	float TargetArmor = 0.0f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ArmorDef, EvaluationParams, TargetArmor);
+	TargetArmor = FMath::Max<float>(TargetArmor, 0.0f);
+
+	float SourceArmorPenetration = 0.0f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ArmorPenetrationDef, EvaluationParams, SourceArmorPenetration);
+	SourceArmorPenetration = FMath::Max<float>(SourceArmorPenetration, 0.0f);
+
+	// ArmorPenetration ignores a percentage of the Target's Armor.
+	const float EffectiveArmor = TargetArmor * (100.0f - SourceArmorPenetration * 0.25f) / 100.0f;
+	// Armor ignores a percentage of incoming damage.
+	Damage *= (100 - EffectiveArmor * 0.333f) / 100.0f;
 
 	const FGameplayModifierEvaluatedData EvaluatedData(
 		UAuraAttributeSet::GetIncomingDamageAttribute(),
