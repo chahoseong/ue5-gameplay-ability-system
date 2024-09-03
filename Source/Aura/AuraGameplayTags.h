@@ -56,6 +56,9 @@ public:
 	 */
 
 	FGameplayTag Damage;
+	FGameplayTag Damage_Fire;
+
+	TArray<FGameplayTag> DamageTypes;
 
 	/*
 	 * Effects
